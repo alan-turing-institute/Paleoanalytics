@@ -1,11 +1,11 @@
 import skimage
 import skimage.feature
 import skimage.viewer
-from skimage.filters import threshold_minimum, threshold_mean
+from skimage.filters import threshold_minimum, threshold_mean, threshold_otsu, threshold_local
 from skimage import filters
 from skimage.measure import find_contours
 import numpy as np
-import matplotlib.pyplot as plt
+
 
 def read_image(filename):
     """
@@ -39,14 +39,18 @@ def detect_lithic(image_array, config_file):
 
     """
 
-    thresh = threshold_minimum(image_array)
-    thresh = thresh*config_file['threshold']
+    # thresh = threshold_minimum(image_array)
+    # thresh = thresh*config_file['threshold']
+    #
+    # binary = image_array < thresh
 
-    binary = image_array < thresh
 
+    block_size = 5
+    local_thresh = threshold_local(image_array, block_size, offset= 2)
+    binary = image_array > local_thresh
     binary_edge_sobel = filters.sobel(binary)
 
-    return binary_edge_sobel, thresh
+    return binary_edge_sobel, local_thresh
 
 def find_lithic_contours(image_array, config_file):
     """
