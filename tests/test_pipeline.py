@@ -5,7 +5,7 @@ import os
 import yaml
 from pylithics.src.read_and_process import read_image, detect_lithic, \
     find_lithic_contours, process_image, get_scars_angles, data_output, find_arrows
-from pylithics.src.utils import get_angles
+from pylithics.src.utils import get_angles, complexity_estimator
 
 
 def test_pipeline():
@@ -27,6 +27,9 @@ def test_pipeline():
 
     # find contours
     contours = find_lithic_contours(binary_array, config_file)
+
+    # add complexity measure
+    contours = complexity_estimator(contours)
 
     # in case we dont have arrows
     contours = get_scars_angles(image_processed, contours)
@@ -60,6 +63,9 @@ def test_arrow_pipeline():
     # find contours
     contours = find_lithic_contours(binary_array, config_file)
 
+    # add complexity measure
+    contours = complexity_estimator(contours)
+
     # get the templates for the arrows
     templates = find_arrows(image_array, image_processed, False)
 
@@ -70,5 +76,5 @@ def test_arrow_pipeline():
     contours_final = get_scars_angles(image_processed, contours, arrow_df)
 
     assert len(templates) == 4
-    assert contours_final.shape == (11, 15)
+    assert contours_final.shape == (11, 16)
     assert arrow_df.shape == (4, 2)

@@ -4,6 +4,7 @@ import pandas as pd
 import scipy.ndimage as ndi
 import pylithics.src.plotting as plot
 import math
+from scipy.spatial.distance import cdist
 
 
 def mask_image(binary_array, contour, innermask=False):
@@ -658,3 +659,91 @@ def shape_detection(contour):
         shape = "arrow"
         # otherwise, we assume the shape is an arrow
     return shape, vertices
+
+def complexity_estimator(contour_df):
+    """
+
+    Function that estimate a complexity measure. Complexity is measured as the number of adjacent contours
+    for each contour.
+
+    Parameters
+    ----------
+    contour_df: dataframe
+        Dataframe with all contour information for an image.
+    Returns
+    -------
+
+    A copy of the contour_df dataframe with a new measure of complexity
+
+    """
+
+    adjacency_list = []
+    for i in range(0, contour_df.shape[0]):
+        if contour_df.iloc[i]["parent_index"] == -1:
+            adjacency_list.append(0)
+        else:
+            # list coordinates for the contour we are interested on
+            contour_coordinate = contour_df.iloc[i]["contour"]
+
+            # list of coordinates of each of the siblings that we are interested on (list of list)
+            contour_coordinate_siblings = contour_df[contour_df["parent_index"] == contour_df.iloc[i]["parent_index"]]['contour'].values
+
+            count = 0
+            for sibling_contour in contour_coordinate_siblings:
+
+                # compare contour_coordinate with sibling_contour
+                adjacent = complexity_measure(contour_coordinate,sibling_contour)
+
+                if adjacent == True:
+                    count = count + 1
+
+            adjacency_list.append(count)
+
+    contour_df['complexity'] = adjacency_list
+
+    return contour_df
+
+
+def complexity_measure(contour_coordinates1, contour_coordinates2):
+    """
+    Decide if two contours are adjacent based on distance between its coordinates.
+
+    Parameters
+    ----------
+    contour_coordinates1: list of lists
+        Pixel coordinates for a contour of a single flake scar
+        or outline of a lithic object detected by contour finding
+    contour_coordinates2: list of lists
+        Pixel coordinates for a contour of a single flake scar
+        or outline of a lithic object detected by contour finding
+
+    Returns
+    -------
+
+    A boolean
+
+    """
+
+    # if they are the same contour they are not adjacent
+    if np.array_equal(contour_coordinates1, contour_coordinates2):
+        return False
+    else:
+        # get minimum distance between contours
+        min_dist = np.min(cdist(contour_coordinates1, contour_coordinates2))
+
+        # if the minimum distance found is less than a threshold then they are adjacent
+        if min_dist < 70:
+            return True
+        else:
+            return False
+
+
+
+
+
+
+
+
+
+
+
