@@ -5,7 +5,6 @@ import warnings
 
 def fig_size(image_array):
     """
-
     Calculate optimum figure horizontal width based on the ratio of sizes of rows and columns.
 
     Parameters
@@ -16,7 +15,6 @@ def fig_size(image_array):
     -------
     A number for the x width of the figure size.
     """
-
     ratio = image_array.shape[0] / image_array.shape[1]
     if ratio < 0.7:
         x_size = 20 / ratio
@@ -36,41 +34,36 @@ def plot_surfaces(image_array, contours_df, output_figure):
     Parameters
     ----------
     image_array: array
-        array of an unprocessed image read by openCV (0, 255 pixels)
+        Array of an unprocessed image read by openCV (0, 255 pixels)
     contours_df: dataframe
         Dataframe with detected contours and extra information about them.
     output_figure: str
-        path including name of the figure to be saved
-
+        Path including name of the figure to be saved
     """
     fig_x_size = fig_size(image_array)
     fig, ax = plt.subplots(figsize=(fig_x_size, 20))
     ax.imshow(image_array, cmap=plt.cm.gray)
 
     surfaces_classification = utils.classify_surfaces(contours_df)
-    # selecting only surfaces (lowest hierarchy level).
     contours_surface_df = contours_df[contours_df['parent_index'] == -1].sort_values(by=["area_px"], ascending=False)
 
     if contours_surface_df.shape[0] == 0:
-        warnings.warn("Warning: No surfaces detected, no surface output figure will be saved.'")
+        warnings.warn("Warning: No surfaces detected, no surface output figure will be saved.")
         return None
 
     cmap_list = plt.cm.get_cmap('Paired', contours_surface_df.shape[0])
 
-    i = 0
-    for contour in contours_surface_df['contour'].values:
+    for i, contour in enumerate(contours_surface_df['contour'].values):
         classification = surfaces_classification[i]
         text = str(classification)
-        ax.plot(contour[:, 0], contour[:, 1], label=text, linewidth=10, color=cmap_list(i))
-        i = i + 1
+        ax.plot(contour[:, 0], contour[:, 1], label=text, linewidth=8, color=cmap_list(i))
 
     ax.set_xticks([])
     ax.set_yticks([])
-    plt.title("Detected surfaces", fontsize=30)
-    plt.legend(bbox_to_anchor=(1.02, 0), loc="lower left", borderaxespad=0, fontsize=18)
-    plt.savefig(output_figure)
+    plt.title("Detected surfaces", fontsize=32)
+    plt.legend(bbox_to_anchor=(1.02, 0), loc="lower left", borderaxespad=0, fontsize=22)
+    plt.savefig(output_figure, bbox_inches='tight')
     plt.close(fig)
-
 
 def plot_scars(image_array, contours_df, output_figure):
     """
@@ -84,38 +77,32 @@ def plot_scars(image_array, contours_df, output_figure):
         Dataframe with detected contours and extra information about them.
     output_figure: str
         Path including name of the figure to be saved
-
     """
     fig_x_size = fig_size(image_array)
     fig, ax = plt.subplots(figsize=(fig_x_size, 20))
 
     ax.imshow(image_array, cmap=plt.cm.gray)
-
-    # selecting only surfaces (lowest hierarchy level).
     contours_scars_df = contours_df[contours_df['parent_index'] != -1].sort_values(by=["area_px"], ascending=False)
 
     if contours_scars_df.shape[0] == 0:
-        warnings.warn("Warning: No scars detected, no scar output figure will be saved.'")
+        warnings.warn("Warning: No scars detected, no scar output figure will be saved.")
         return None
 
     cmap_list = plt.cm.get_cmap('tab20', contours_scars_df.shape[0])
 
-    i = 0
-    for contour, area_mm, width_mm, height_mm in \
-            contours_scars_df[['contour', 'area_mm',
-                                 'width_mm', 'height_mm']].itertuples(index=False):
-        text = "A: " + str(area_mm) + ", B: " + str(width_mm) + ", L: " + str(height_mm)
-        ax.plot(contour[:, 0], contour[:, 1], label=text, linewidth=5, color=cmap_list(i))
-        i = i + 1
+    for i, (contour, area_mm, width_mm, height_mm) in enumerate(
+            contours_scars_df[['contour', 'area_mm', 'width_mm', 'height_mm']].itertuples(index=False)):
+        text = f"A: {area_mm}, B: {width_mm}, L: {height_mm}"
+        ax.plot(contour[:, 0], contour[:, 1], label=text, linewidth=6, color=cmap_list(i))
 
     ax.set_xticks([])
     ax.set_yticks([])
-    plt.title("Scar measurements (in millimeters)", fontsize=30)
-    plt.figtext(0.02, 0.5, ("A: Total Area"), fontsize=18)
-    plt.figtext(0.02, 0.52, ("B: Maximum Breadth"), fontsize=18)
-    plt.figtext(0.02, 0.54, ("L: Maximum Length"), fontsize=18)
-    plt.legend(bbox_to_anchor=(1.02, 0), loc="lower left", borderaxespad=0, fontsize=18)
-    plt.savefig(output_figure)
+    plt.title("Scar measurements (in millimeters)", fontsize=32)
+    plt.figtext(0.02, 0.5, "A: Total Area", fontsize=22)
+    plt.figtext(0.02, 0.52, "B: Maximum Breadth", fontsize=22)
+    plt.figtext(0.02, 0.54, "L: Maximum Length", fontsize=22)
+    plt.legend(bbox_to_anchor=(1.02, 0), loc="lower left", borderaxespad=0, fontsize=22)
+    plt.savefig(output_figure, bbox_inches='tight')
     plt.close(fig)
 
 def plot_angles(image_array, contours_df, output_path):
@@ -130,32 +117,27 @@ def plot_angles(image_array, contours_df, output_path):
         Dataframe with detected contours and extra information about them.
     output_path: str
         Path to output directory to save processed images
-
     """
     fig_x_size = fig_size(image_array)
     fig, ax = plt.subplots(figsize=(fig_x_size, 20))
     ax.imshow(image_array, cmap=plt.cm.gray)
 
-    # selecting only scars with angles
     contours_angles_df = contours_df[(contours_df['parent_index'] != -1) & (contours_df['angle'].notnull())].sort_values(by=["area_px"], ascending=False)
     cmap_list = plt.cm.get_cmap('tab20', contours_angles_df.shape[0])
 
     if contours_angles_df.shape[0] == 0:
-        warnings.warn("Warning: No scars with measured angles detected, no angle output figure will be saved.'")
+        warnings.warn("Warning: No scars with measured angles detected, no angle output figure will be saved.")
         return None
 
-    i = 0
-    for contour, angle in \
-            contours_angles_df[['contour', 'angle']].itertuples(index=False):
-        text = "Angle: " + str(angle)
-        ax.plot(contour[:, 0], contour[:, 1], label=text, linewidth=5, color=cmap_list(i))
-        i = i + 1
+    for i, (contour, angle) in enumerate(contours_angles_df[['contour', 'angle']].itertuples(index=False)):
+        text = f"Angle: {angle}"
+        ax.plot(contour[:, 0], contour[:, 1], label=text, linewidth=6, color=cmap_list(i))
 
     ax.set_xticks([])
     ax.set_yticks([])
-    plt.title("Scar strike angle measurement (in degrees)", fontsize=30)
-    plt.legend(bbox_to_anchor=(1.02, 0), loc="lower left", borderaxespad=0, fontsize=18)
-    plt.savefig(output_path)
+    plt.title("Scar strike angle measurement (in degrees)", fontsize=32)
+    plt.legend(bbox_to_anchor=(1.02, 0), loc="lower left", borderaxespad=0, fontsize=22)
+    plt.savefig(output_path, bbox_inches='tight')
     plt.close(fig)
 
 
